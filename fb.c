@@ -23,8 +23,21 @@ int fb_cam_y(void) { return origin_y + fine_y; }
 
 void fb_key_set(int key, int down)
 {
-    if (key > 0 && key < 8)
-        keys[key] = down;
+    if (key <= 0 || key >= 8)
+        return;
+    keys[key] = down;
+    /* Opposite arrows cannot both be down — otherwise dir cancels to 0 and
+     * reversing feels like the camera is stalling or getting slower. */
+    if (down) {
+        if (key == KEY_LEFT)
+            keys[KEY_RIGHT] = 0;
+        else if (key == KEY_RIGHT)
+            keys[KEY_LEFT] = 0;
+        else if (key == KEY_UP)
+            keys[KEY_DOWN] = 0;
+        else if (key == KEY_DOWN)
+            keys[KEY_UP] = 0;
+    }
 }
 
 int fb_key_down(int key)

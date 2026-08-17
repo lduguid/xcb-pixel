@@ -6,6 +6,8 @@
 
 TOOLSET ?= mingw
 
+DEMOS = xcb-pixel.exe xcb-pixel-bobs.exe xcb-pixel-both.exe
+
 .DEFAULT_GOAL := all
 .PHONY: all clean check-mingw check-msvc
 
@@ -17,7 +19,10 @@ else
 CL = sh msvc-cl.sh
 endif
 
-all: check-msvc xcb-pixel.exe
+WINLIBS = user32.lib gdi32.lib winmm.lib
+CLFLAGS = /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS
+
+all: check-msvc $(DEMOS)
 	@echo "win32 TOOLSET=msvc  (cl)"
 
 check-msvc:
@@ -27,9 +32,14 @@ check-msvc:
 	  echo "  Or set VCVARS to your vcvars64.bat"; \
 	  exit 1; }
 
-xcb-pixel.exe: demo.c fb.c plat_win32.c fb.h fb_internal.h
-	$(CL) /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:xcb-pixel.exe demo.c fb.c plat_win32.c \
-		user32.lib gdi32.lib winmm.lib
+xcb-pixel.exe: demo.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h
+	$(CL) $(CLFLAGS) /Fe:$@ demo.c fb.c plat_win32.c world.c $(WINLIBS)
+
+xcb-pixel-bobs.exe: demo_bobs.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+	$(CL) $(CLFLAGS) /Fe:$@ demo_bobs.c bobs.c fb.c plat_win32.c world.c $(WINLIBS)
+
+xcb-pixel-both.exe: demo_both.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+	$(CL) $(CLFLAGS) /Fe:$@ demo_both.c bobs.c fb.c plat_win32.c world.c $(WINLIBS)
 
 else
 
@@ -39,7 +49,7 @@ else
 MINGW_CC ?= x86_64-w64-mingw32-gcc
 endif
 
-all: check-mingw xcb-pixel.exe
+all: check-mingw $(DEMOS)
 	@echo "win32 TOOLSET=mingw  ($(MINGW_CC))"
 
 check-mingw:
@@ -50,10 +60,18 @@ check-mingw:
 	  echo "Or: make -f Makefile.win32 TOOLSET=msvc"; \
 	  exit 1; }
 
-xcb-pixel.exe: demo.c fb.c plat_win32.c fb.h fb_internal.h
-	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo.c fb.c plat_win32.c -lgdi32 -luser32 -lwinmm
+xcb-pixel.exe: demo.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h
+	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo.c fb.c plat_win32.c world.c -lgdi32 -luser32 -lwinmm
+
+xcb-pixel-bobs.exe: demo_bobs.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo_bobs.c bobs.c fb.c plat_win32.c world.c \
+		-lgdi32 -luser32 -lwinmm
+
+xcb-pixel-both.exe: demo_both.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo_both.c bobs.c fb.c plat_win32.c world.c \
+		-lgdi32 -luser32 -lwinmm
 
 endif
 
 clean:
-	rm -f xcb-pixel.exe *.obj
+	rm -f $(DEMOS) *.obj

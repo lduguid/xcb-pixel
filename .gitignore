@@ -1,3 +1,5 @@
 xcb-pixel
+xcb-pixel-bobs
+xcb-pixel-both
 *.exe
 *.obj
