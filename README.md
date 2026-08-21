@@ -2,6 +2,8 @@
 
 You are plotting **pixels** on a 320×200 playfield. There is no sprite hardware and no tilemap. The only drawing call is `fb_put`. Lines, text, and bobs are your problem — that is the point.
 
+This is not a C64 or Amiga emulator. Fine/coarse scroll is just a small subset of that idea so demos share one pixel API.
+
 The bitmap is VIEW + 8-pixel **margin** on each axis. The window shows a 320×200 slice at `(fine_x, fine_y)`. `fb_scroll` moves that slice one pixel at a time. After 8 pixels the bitmap is `memmove`'d by a margin and fine wrap — the same coarse/fine split as a C64 or Amiga. Newly exposed strips are **undefined**; redraw them if you keep pixels around.
 
 Include `fb.h`. Linux and Windows. Do not include X11 or Win32.
