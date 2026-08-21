@@ -6,7 +6,9 @@
 
 TOOLSET ?= mingw
 
-DEMOS = xcb-pixel.exe xcb-pixel-bobs.exe xcb-pixel-both.exe
+TAG ?=
+NAMES = xcb-pixel xcb-pixel-bobs xcb-pixel-both
+DEMOS = $(addsuffix $(TAG).exe,$(NAMES))
 
 .DEFAULT_GOAL := all
 .PHONY: all clean check-mingw check-msvc
@@ -15,31 +17,34 @@ ifeq ($(TOOLSET),msvc)
 
 ifeq ($(OS),Windows_NT)
 CL = msvc-cl.cmd
+DEVNUL = NUL
 else
 CL = sh msvc-cl.sh
+DEVNUL = /dev/null
 endif
 
 WINLIBS = user32.lib gdi32.lib winmm.lib
-CLFLAGS = /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS
+CLFLAGS = -nologo -O2 -W3 -D_CRT_SECURE_NO_WARNINGS
+MSVC_GUI = -link -SUBSYSTEM:WINDOWS -ENTRY:mainCRTStartup
 
 all: check-msvc $(DEMOS)
 	@echo "win32 TOOLSET=msvc  (cl)"
 
 check-msvc:
-	@$(CL) /nologo /? >/dev/null || { \
+	@$(CL) -nologo -Bv >$(DEVNUL) 2>&1 || { \
 	  echo "Need Visual Studio C++ x64 toolset (cl + vcvars64)."; \
 	  echo "  make -f Makefile.win32 TOOLSET=msvc"; \
 	  echo "  Or set VCVARS to your vcvars64.bat"; \
 	  exit 1; }
 
-xcb-pixel.exe: demo.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h
-	$(CL) $(CLFLAGS) /Fe:$@ demo.c fb.c plat_win32.c world.c $(WINLIBS)
+xcb-pixel$(TAG).exe: demo.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h
+	$(CL) $(CLFLAGS) -Fe$@ demo.c fb.c plat_win32.c world.c $(MSVC_GUI) $(WINLIBS)
 
-xcb-pixel-bobs.exe: demo_bobs.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
-	$(CL) $(CLFLAGS) /Fe:$@ demo_bobs.c bobs.c fb.c plat_win32.c world.c $(WINLIBS)
+xcb-pixel-bobs$(TAG).exe: demo_bobs.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+	$(CL) $(CLFLAGS) -Fe$@ demo_bobs.c bobs.c fb.c plat_win32.c world.c $(MSVC_GUI) $(WINLIBS)
 
-xcb-pixel-both.exe: demo_both.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
-	$(CL) $(CLFLAGS) /Fe:$@ demo_both.c bobs.c fb.c plat_win32.c world.c $(WINLIBS)
+xcb-pixel-both$(TAG).exe: demo_both.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+	$(CL) $(CLFLAGS) -Fe$@ demo_both.c bobs.c fb.c plat_win32.c world.c $(MSVC_GUI) $(WINLIBS)
 
 else
 
@@ -48,6 +53,7 @@ MINGW_CC ?= gcc
 else
 MINGW_CC ?= x86_64-w64-mingw32-gcc
 endif
+MINGW_GUI = -mwindows -lgdi32 -luser32 -lwinmm
 
 all: check-mingw $(DEMOS)
 	@echo "win32 TOOLSET=mingw  ($(MINGW_CC))"
@@ -60,18 +66,22 @@ check-mingw:
 	  echo "Or: make -f Makefile.win32 TOOLSET=msvc"; \
 	  exit 1; }
 
-xcb-pixel.exe: demo.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h
-	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo.c fb.c plat_win32.c world.c -lgdi32 -luser32 -lwinmm
+xcb-pixel$(TAG).exe: demo.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h
+	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo.c fb.c plat_win32.c world.c $(MINGW_GUI)
 
-xcb-pixel-bobs.exe: demo_bobs.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+xcb-pixel-bobs$(TAG).exe: demo_bobs.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
 	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo_bobs.c bobs.c fb.c plat_win32.c world.c \
-		-lgdi32 -luser32 -lwinmm
+		$(MINGW_GUI)
 
-xcb-pixel-both.exe: demo_both.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
+xcb-pixel-both$(TAG).exe: demo_both.c bobs.c fb.c plat_win32.c world.c fb.h fb_internal.h world.h bobs.h
 	$(MINGW_CC) -std=c11 -Wall -Wextra -O2 -o $@ demo_both.c bobs.c fb.c plat_win32.c world.c \
-		-lgdi32 -luser32 -lwinmm
+		$(MINGW_GUI)
 
 endif
 
 clean:
-	rm -f $(DEMOS) *.obj
+	rm -f $(DEMOS) *.obj \
+		$(addsuffix .exe,$(NAMES)) \
+		$(addsuffix -mingw.exe,$(NAMES)) \
+		$(addsuffix -w64.exe,$(NAMES)) \
+		$(addsuffix -msvc.exe,$(NAMES))

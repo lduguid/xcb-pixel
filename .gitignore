@@ -3,3 +3,8 @@ xcb-pixel-bobs
 xcb-pixel-both
 *.exe
 *.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+nul
